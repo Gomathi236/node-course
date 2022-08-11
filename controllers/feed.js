@@ -4,20 +4,35 @@ const path = require('path');
 const { validationResult } = require('express-validator/check');
 
 const Post = require('../models/post');
+const post = require('../models/post');
 
 exports.getPosts = (req, res, next) => {
-  Post.find()
+
+  //pagination 
+  const currentPage = req.query.page || 1;
+  const perPage = 4;
+  let totalItems;
+  post.find() 
+    .countDocuments()
+    .then(count =>{
+      totalItems = count;
+       return Post.find()
+          .skip((currentPage - 1) * perPage)
+          .limit(perPage)
+    })
     .then(posts => {
       res
         .status(200)
-        .json({ message: 'Fetched posts successfully.', posts: posts });
+        .json({ message: 'Fetched posts successfully.', posts: posts , totalItems :totalItems });
     })
+    
     .catch(err => {
       if (!err.statusCode) {
         err.statusCode = 500;
       }
       next(err);
     });
+  
 };
 
 exports.createPost = (req, res, next) => {
@@ -39,7 +54,7 @@ exports.createPost = (req, res, next) => {
     title: title,
     content: content,
     imageUrl: imageUrl,
-    creator: { name: 'Maximilian' }
+    creator: { name: 'Gomathi' }
   });
   post
     .save()
@@ -122,6 +137,7 @@ exports.updatePost = (req, res, next) => {
 };
 
 
+
 exports.deletePost = (req,res, next) =>{
   const postId = req.params.postId;
   Post.findById(postId)
@@ -135,7 +151,8 @@ exports.deletePost = (req,res, next) =>{
     return Post.findByIdAndRemove(postId);
   })
   .then( result =>{
-    res.status(200).json({ message: 'Post deleted!', post: result });
+    console.log(result);
+    res.status(200).json({ message: 'Post deleted!'});
 
   })
   .catch(err => {
